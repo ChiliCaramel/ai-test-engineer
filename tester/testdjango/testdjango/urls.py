@@ -48,5 +48,6 @@ urlpatterns = [
     path('download/<str:file_name>/',ld_views.download_files), # Django路径参数写法： <> 表示路径参数，str:file_name -> 类型：变量名
     path('upload-file/',ld_views.upload_file),
     path('learnLogin/',ld_views.learn_login),
-    path('user-login/',u_views.user_login)
+    path('user-login/',u_views.user_login),
+    path('test-pagination/',ld_views.test_pagination)
 ]

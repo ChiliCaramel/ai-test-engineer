@@ -8,9 +8,99 @@ from django.utils import timezone
 import os
 from django.contrib.auth import login,authenticate
 from django.contrib.sessions.models import Session
+from django.core.paginator import Paginator
+from django.http import JsonResponse
+from django.core import serializers
+
 
 # Create your views here.
 # 写业务逻辑
+
+@require_http_methods(['GET'])
+def foreign_select(request):
+    
+    # 从 Employee 查对应的 Department -> 相关外键查主表
+    emp = models.Employee.objects.get(id=1)
+
+    print(emp.department)
+    print(emp.department.name)
+
+    # 主表查有相关外键表  模型名_set
+    employees = models.Department.objects.get(id=1).employee_set.all()
+    print(employees)
+
+    # 跨表过滤 
+    employees = models.Employee.objects.filter(department__name='技术部').values()
+
+    employess_data_json = serializers("json",employees)
+
+    # 等用于：
+    # SELECT learndjango_employee.*
+    # FROM learndjango_employee
+    # INNER JOIN learndjango_department 
+    # ON learndjango_employee.department_id = learndjango_department.id
+    # WHERE learndjango_department.name = '技术部'
+
+    # select_related -> 相当于 JOIN 通过外键将两个表连接起来  正向，通过相关外键查主表（多对一）
+    employees_2 = models.Employee.objects.select_related('department').all()
+    print(employees_2)
+    for emp in employees_2:
+        print(emp.department.name)
+    # -> 等用于
+    # SELECT * FROM employee
+    # LEFT JOIN department ON employee.department_id = department.id;
+    
+    # 如果不用 select_related ，会先查出所有的Employees 再依次去查Department，多次查询。性能不友好。
+
+    # prefetch_related -> 两次查询 反向，通过主表查有相关外键的表（一对多）
+    departments = models.Department.objects.prefetch_related("employee_set").all()
+
+    for dept in departments:
+        employees = dept.employee_set.all()
+    
+    # 等同于：SELECT * FROM department # SELECT * FROM employee WHERE department_id IN (1, 2, 3)
+    # 如果不用prefetch_related 是不是就等于 ：
+    # SELECT * FROM department
+    # SELECT * FROM employee WHERE department_id =1 
+    # SELECT * FROM employee WHERE department_id =2
+    # SELECT * FROM employee WHERE department_id = 3
+    # 如果不用prefetch_related dept.employee_set.all() 要查询多次，造成N+1问题即多次查询
+
+
+
+
+@require_http_methods(['GET'])
+def test_pagination(request):
+    """
+    test pagination and verify 惰性加载
+    """
+    students = models.Students.objects.filter(age=18).values()
+    stu_exclude = models.Students.objects.exclude(age=18)
+    stu_all = models.Students.objects.all()
+    stu_vlist = models.Students.objects.values_list()
+
+    # 惰性加载
+    print(type(students)) # QuerySet
+    print(type(stu_exclude))
+    print(type(stu_all))
+    print(type(stu_vlist))
+
+    pagination = Paginator(students,10)
+
+    print(pagination) 
+    print(type(pagination))
+
+    current_page = pagination.page(1)
+    print(current_page)
+    print(type(current_page))
+
+    # 触发查询
+    result = list(current_page)
+    print(result)
+    print(type(result))
+
+    return JsonResponse({'Msg': 'check console'}, status=200)
+
 
 @require_http_methods(['POST'])
 def decryption(request):

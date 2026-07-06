@@ -4,6 +4,42 @@ from django.db import models
 
 # 设计数据库表结构
 
+class Department(models.Model):
+    """
+    部门表
+    """
+    id   = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=64)
+    
+    def __str__(self):
+        return f"{self.id} - {self.name}"
+
+
+class Employee(models.Model):
+    """
+    员工表
+    """
+    id         = models.AutoField(primary_key=True)
+    name       = models.CharField(max_length=64)
+    age        = models.IntegerField(default=0)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.id} - {self.name}"
+
+
+class Salary(models.Model):
+    """
+    薪资表
+    """
+    id       = models.AutoField(primary_key=True)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    amount   = models.FloatField()
+    month    = models.CharField(max_length=7)  # 格式：2026-07
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.month} - {self.amount}"
+    
 class Teacher(models.Model):
 
     t_id = models.AutoField(primary_key=True)
